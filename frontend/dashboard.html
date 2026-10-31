@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="books.html">Books</a>
+                <a href="members.html">Members</a>
+                <a href="issue.html">Issue Book</a>
+                <a href="return.html">Return Book</a>
+                <a href="reports.html">Reports</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📖</div>
+                <div class="stat-title">Total Books</div>
+                <div class="stat-number" id="totalBooks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👥</div>
+                <div class="stat-title">Total Members</div>
+                <div class="stat-number" id="totalMembers">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📤</div>
+                <div class="stat-title">Books Issued</div>
+                <div class="stat-number" id="issuedBooks">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-title">Overdue Books</div>
+                <div class="stat-number" id="overdueBooks">0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Quick Actions</div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="location.href='books.html'">➕ Add New Book</button>
+                <button class="btn btn-success" onclick="location.href='members.html'">👤 Add New Member</button>
+                <button class="btn btn-warning" onclick="location.href='issue.html'">📤 Issue Book</button>
+                <button class="btn btn-info" onclick="location.href='return.html'">📥 Return Book</button>
+            </div>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        checkAuth();
+        loadDashboardStats();
+    </script>
+</body>
+</html>

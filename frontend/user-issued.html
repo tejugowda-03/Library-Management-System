@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Issued Books - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="user-dashboard.html">Dashboard</a>
+                <a href="user-books.html">Browse Books</a>
+                <a href="user-issued.html" class="active">My Issued Books</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📋 My Issued Books</div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Days Left</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="issuedTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!token) window.location.href = 'index.html';
+            if (user.role === 'admin') window.location.href = 'dashboard.html';
+        }
+        
+        async function loadMyBooks() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            try {
+                const response = await fetch(`${API_URL}/transactions/member/${user.id}/current`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const transactions = await response.json();
+                const tbody = document.getElementById('issuedTableBody');
+                
+                if (transactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No books issued yet</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = transactions.map(trans => {
+                    const dueDate = new Date(trans.dueDate);
+                    const today = new Date();
+                    const daysLeft = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    return `
+                        <tr>
+                            <td><strong>${trans.bookId?.title || 'N/A'}</strong></td>
+                            <td>${trans.bookId?.author || 'N/A'}</td>
+                            <td>${new Date(trans.issueDate).toLocaleDateString()}</td>
+                            <td>${new Date(trans.dueDate).toLocaleDateString()}</td>
+                            <td style="color: ${daysLeft < 0 ? 'red' : daysLeft < 3 ? 'orange' : 'green'}">
+                                ${daysLeft < 0 ? `Overdue by ${Math.abs(daysLeft)} days` : `${daysLeft} days left`}
+                            </td>
+                            <td>${daysLeft < 0 ? '<span style="color: red;">⚠️ Overdue</span>' : '<span style="color: green;">✓ Issued</span>'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        checkAuth();
+        loadMyBooks();
+    </script>
+</body>
+</html>

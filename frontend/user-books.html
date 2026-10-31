@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Books - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="user-dashboard.html">Dashboard</a>
+                <a href="user-books.html" class="active">Browse Books</a>
+                <a href="user-issued.html">My Issued Books</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📚 Browse Available Books</div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by title, author or category...">
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>ISBN</th>
+                            <th>Category</th>
+                            <th>Available Copies</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Loading books...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (!token) window.location.href = 'index.html';
+            if (user.role === 'admin') window.location.href = 'dashboard.html';
+        }
+        
+        async function loadBooks() {
+            const token = localStorage.getItem('token');
+            const search = document.getElementById('searchInput')?.value || '';
+            
+            try {
+                let url = `${API_URL}/books`;
+                if (search) url += `?search=${search}`;
+                
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const books = await response.json();
+                const tbody = document.getElementById('booksTableBody');
+                
+                if (books.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No books found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = books.map(book => `
+                    <tr>
+                        <td><strong>${book.title}</strong></td>
+                        <td>${book.author}</td>
+                        <td>${book.isbn}</td>
+                        <td>${book.category}</td>
+                        <td>${book.availableCopies}/${book.totalCopies}</td>
+                        <td>
+                            ${book.availableCopies > 0 ? 
+                                '<span style="color: green;">✓ Available</span>' : 
+                                '<span style="color: red;">✗ Not Available</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        checkAuth();
+        loadBooks();
+        document.getElementById('searchInput').addEventListener('input', loadBooks);
+    </script>
+</body>
+</html>

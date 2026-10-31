@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Books</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .book { border: 1px solid #ddd; margin: 10px; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>📚 Books in Library</h1>
+    <div id="books"></div>
+
+    <script>
+        fetch('http://localhost:5000/api/books')
+            .then(res => res.json())
+            .then(books => {
+                const container = document.getElementById('books');
+                container.innerHTML = books.map(book => `
+                    <div class="book">
+                        <strong>${book.title}</strong><br>
+                        Author: ${book.author}<br>
+                        ISBN: ${book.isbn}<br>
+                        Category: ${book.category}<br>
+                        Copies: ${book.availableCopies}/${book.totalCopies}
+                    </div>
+                `).join('');
+            })
+            .catch(err => console.error('Error:', err));
+    </script>
+</body>
+</html>

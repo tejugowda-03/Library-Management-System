@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overdue Books Report - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .summary-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .summary-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .filter-bar {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn-export {
+            background: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-print {
+            background: #17a2b8;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .overdue-row {
+            background-color: #fff3cd;
+        }
+        .very-overdue {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="books.html">Books</a>
+                <a href="members.html">Members</a>
+                <a href="issue.html">Issue Book</a>
+                <a href="return.html">Return Book</a>
+                <a href="reports.html" class="active">Reports</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="report-header">
+            <h2>⚠️ Overdue Books Report</h2>
+            <p>List of all books that are past their due date</p>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="filter-bar">
+            <select id="filterDays">
+                <option value="0">All Overdue Books</option>
+                <option value="7">Overdue by 7+ days</option>
+                <option value="14">Overdue by 14+ days</option>
+                <option value="30">Overdue by 30+ days</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="🔍 Search by book or member..." style="flex: 1;">
+            <button class="btn-export" onclick="exportToCSV()">📥 Export to CSV</button>
+            <button class="btn-print" onclick="printReport()">🖨️ Print Report</button>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-item">
+                <div>📚 Total Overdue Books</div>
+                <div class="summary-number" id="totalOverdue">0</div>
+            </div>
+            <div class="summary-item">
+                <div>💰 Total Fine Amount</div>
+                <div class="summary-number" id="totalFine">₹0</div>
+            </div>
+            <div class="summary-item">
+                <div>👥 Affected Members</div>
+                <div class="summary-number" id="affectedMembers">0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📋 Overdue Books List</div>
+            <div class="table-container">
+                <table class="table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Sl No</th>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Member Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Days Overdue</th>
+                            <th>Fine (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overdueTableBody">
+                        <tr><td colspan="10" style="text-align: center;">Loading overdue books...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let allTransactions = [];
+        let overdueList = [];
+        
+        function checkAuth() {
+            if (!localStorage.getItem('isLoggedIn')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            const bgColor = type === 'error' ? '#f8d7da' : '#d4edda';
+            const textColor = type === 'error' ? '#721c24' : '#155724';
+            messageDiv.innerHTML = `<div style="background: ${bgColor}; color: ${textColor}; padding: 10px; border-radius: 5px; margin-bottom: 15px;">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+        
+        async function loadOverdueBooks() {
+            try {
+                const response = await fetch(`${API_URL}/transactions`);
+                allTransactions = await response.json();
+                
+                const today = new Date();
+                
+                // Filter only issued books that are overdue
+                overdueList = allTransactions.filter(transaction => {
+                    if (transaction.status === 'RETURNED') return false;
+                    const dueDate = new Date(transaction.dueDate);
+                    return dueDate < today;
+                });
+                
+                // Apply filter
+                applyFilter();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('overdueTableBody').innerHTML = `<tr><td colspan="10" style="text-align: center; color: red;">Error: ${error.message}</td></tr>`;
+            }
+        }
+        
+        function applyFilter() {
+            const minDays = parseInt(document.getElementById('filterDays').value);
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const today = new Date();
+            
+            let filtered = overdueList.filter(book => {
+                const dueDate = new Date(book.dueDate);
+                const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+                
+                // Apply days filter
+                if (minDays > 0 && daysOverdue < minDays) return false;
+                
+                // Apply search filter
+                if (searchTerm) {
+                    const bookTitle = (book.bookId?.title || '').toLowerCase();
+                    const memberName = (book.memberId?.name || '').toLowerCase();
+                    if (!bookTitle.includes(searchTerm) && !memberName.includes(searchTerm)) return false;
+                }
+                
+                return true;
+            });
+            
+            displayTable(filtered);
+            updateSummary(filtered);
+        }
+        
+        function displayTable(filteredBooks) {
+            const tableBody = document.getElementById('overdueTableBody');
+            const today = new Date();
+            
+            if (filteredBooks.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No overdue books found</td></tr>';
+                return;
+            }
+            
+            let totalFine = 0;
+            
+            tableBody.innerHTML = filteredBooks.map((book, index) => {
+                const dueDate = new Date(book.dueDate);
+                const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+                const fineAmount = daysOverdue * 5;
+                totalFine += fineAmount;
+                
+                const rowClass = daysOverdue > 30 ? 'very-overdue' : (daysOverdue > 0 ? 'overdue-row' : '');
+                
+                return `
+                    <tr class="${rowClass}">
+                        <td>${index + 1}</td>
+                        <td><strong>${book.bookId?.title || 'N/A'}</strong><br><small>ISBN: ${book.bookId?.isbn || 'N/A'}</small></td>
+                        <td>${book.bookId?.author || 'N/A'}</td>
+                        <td>${book.memberId?.name || 'N/A'}</td>
+                        <td>${book.memberId?.email || 'N/A'}</td>
+                        <td>${book.memberId?.phone || 'N/A'}</td>
+                        <td>${new Date(book.issueDate).toLocaleDateString()}</td>
+                        <td style="color: red; font-weight: bold;">${new Date(book.dueDate).toLocaleDateString()}</td>
+                        <td style="color: red; font-weight: bold;">${daysOverdue} days</td>
+                        <td style="color: red; font-weight: bold;">₹${fineAmount}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('totalFine').innerHTML = `₹${totalFine}`;
+        }
+        
+        function updateSummary(filteredBooks) {
+            document.getElementById('totalOverdue').innerText = filteredBooks.length;
+            
+            const uniqueMembers = new Set(filteredBooks.map(b => b.memberId?._id).filter(id => id));
+            document.getElementById('affectedMembers').innerText = uniqueMembers.size;
+        }
+        
+        function exportToCSV() {
+            const today = new Date();
+            let filtered = overdueList;
+            
+            if (filtered.length === 0) {
+                showMessage('No data to export', 'error');
+                return;
+            }
+            
+            let csv = "Sl No,Book Title,Author,ISBN,Member Name,Member Email,Member Phone,Issue Date,Due Date,Days Overdue,Fine Amount (₹)\n";
+            
+            filtered.forEach((book, index) => {
+                const dueDate = new Date(book.dueDate);
+                const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+                const fineAmount = daysOverdue * 5;
+                
+                csv += `${index + 1},`;
+                csv += `"${book.bookId?.title || 'N/A'}",`;
+                csv += `"${book.bookId?.author || 'N/A'}",`;
+                csv += `"${book.bookId?.isbn || 'N/A'}",`;
+                csv += `"${book.memberId?.name || 'N/A'}",`;
+                csv += `"${book.memberId?.email || 'N/A'}",`;
+                csv += `"${book.memberId?.phone || 'N/A'}",`;
+                csv += `${new Date(book.issueDate).toLocaleDateString()},`;
+                csv += `${new Date(book.dueDate).toLocaleDateString()},`;
+                csv += `${daysOverdue},`;
+                csv += `${fineAmount}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `overdue_books_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            showMessage('Report exported successfully!', 'success');
+        }
+        
+        function printReport() {
+            const today = new Date();
+            let filtered = overdueList;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Overdue Books Report</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h1 { color: #333; text-align: center; }
+                        .header { text-align: center; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+                        .overdue { color: red; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>📚 Library Management System</h1>
+                        <h2>Overdue Books Report</h2>
+                        <p>Generated on: ${new Date().toLocaleString()}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Sl No</th>
+                                <th>Book Title</th>
+                                <th>Author</th>
+                                <th>Member Name</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Days Overdue</th>
+                                <th>Fine (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filtered.map((book, index) => {
+                                const dueDate = new Date(book.dueDate);
+                                const daysOverdue = Math.ceil((today - dueDate) / (1000 * 60 * 60 * 24));
+                                const fineAmount = daysOverdue * 5;
+                                return `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${book.bookId?.title || 'N/A'}</td>
+                                        <td>${book.bookId?.author || 'N/A'}</td>
+                                        <td>${book.memberId?.name || 'N/A'}</td>
+                                        <td>${new Date(book.issueDate).toLocaleDateString()}</td>
+                                        <td class="overdue">${new Date(book.dueDate).toLocaleDateString()}</td>
+                                        <td class="overdue">${daysOverdue}</td>
+                                        <td class="overdue">₹${fineAmount}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                    <div class="footer">
+                        <p>Total Overdue Books: ${filtered.length}</p>
+                        <p>This is a system generated report</p>
+                    </div>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+        
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        // Event listeners
+        document.getElementById('filterDays').addEventListener('change', applyFilter);
+        document.getElementById('searchInput').addEventListener('input', applyFilter);
+        
+        // Load data
+        loadOverdueBooks();
+        setInterval(loadOverdueBooks, 30000);
+    </script>
+</body>
+</html>

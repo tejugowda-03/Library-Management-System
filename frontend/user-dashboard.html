@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Library Management System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="chatbot.css">
+    <style>
+        /* ============ CSS VARIABLES ============ */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --primary-light: #7b2cbf;
+            --secondary: #7209b7;
+            --success: #06d6a0;
+            --danger: #ef476f;
+            --warning: #ffb703;
+            --info: #4cc9f0;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--secondary) 100%);
+            --gradient-hover: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            --glass: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+            --shadow-2xl: 0 25px 50px -12px rgba(0,0,0,0.25);
+            --shadow-glow: 0 0 20px rgba(67,97,238,0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Background Pattern Overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M20,20 L30,20 L25,28 Z M50,50 L60,50 L55,58 Z M80,80 L90,80 L85,88 Z M10,70 L20,70 L15,78 Z M70,10 L80,10 L75,18 Z M40,90 L50,90 L45,98 Z"/><rect x="35" y="35" width="10" height="15" rx="2"/><rect x="55" y="55" width="10" height="15" rx="2"/><rect x="15" y="55" width="10" height="15" rx="2"/><rect x="75" y="35" width="10" height="15" rx="2"/></svg>');
+            background-repeat: repeat;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* ============ ANIMATIONS ============ */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes borderGlow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(102,126,234,0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(102,126,234,0); }
+            100% { box-shadow: 0 0 0 0 rgba(102,126,234,0); }
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes modalFadeIn { 
+            from { transform: scale(0.9); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+        
+        /* Glassmorphism Effect */
+        .navbar, .card, .stat-card, .modal-content, .notification-item {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Apply Animations */
+        .card, .stat-card {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        
+        .navbar {
+            animation: slideInDown 0.5s ease-out forwards;
+        }
+        
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        
+        /* Navbar Styles */
+        .navbar { 
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(15px);
+            color: white; 
+            padding: 15px 30px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            box-shadow: var(--shadow-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar h2 { 
+            font-size: 24px; 
+            background: linear-gradient(135deg, #fff, #e0d4ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+        
+        .nav-links { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+        .nav-links a, .nav-links button { 
+            color: white; 
+            text-decoration: none; 
+            padding: 8px 15px; 
+            border-radius: 8px; 
+            transition: all 0.3s ease; 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .nav-links a::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: white;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        
+        .nav-links a:hover::before {
+            width: 80%;
+        }
+        
+        .nav-links a:hover, .nav-links button:hover { 
+            background: rgba(255,255,255,0.2); 
+            transform: translateY(-2px);
+        }
+        
+        .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 30px; }
+        
+        .stat-card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px; 
+            border-radius: 20px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
+        }
+        
+        .stat-card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: var(--shadow-2xl);
+        }
+        
+        .stat-number { 
+            font-size: 32px; 
+            font-weight: bold; 
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-top: 10px; 
+        }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px; 
+            padding: 25px; 
+            margin-bottom: 25px; 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent);
+            animation: borderGlow 3s infinite;
+        }
+        
+        .card h3 { 
+            margin-bottom: 20px; 
+            color: #333; 
+            border-bottom: 2px solid var(--primary); 
+            padding-bottom: 10px; 
+            position: relative;
+        }
+        
+        .card h3::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--secondary);
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease; }
+        
+        .search-box { margin-bottom: 20px; }
+        .search-box input { 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 12px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px; 
+            transition: all 0.3s ease;
+        }
+        .search-box input:focus { outline: none; border-color: var(--primary); box-shadow: var(--shadow-glow); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        th { background: var(--gradient); color: white; font-weight: 600; }
+        tbody tr { transition: all 0.2s ease; }
+        tbody tr:hover { 
+            background: linear-gradient(90deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            transform: scale(1.01);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: all 0.3s ease; 
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:active::after {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: #333; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        
+        .toast-notification { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px; 
+            padding: 15px 20px; 
+            box-shadow: var(--shadow-xl); 
+            z-index: 1000; 
+            border-left: 4px solid; 
+            max-width: 350px; 
+            animation: slideInRight 0.4s ease, fadeOut 0.4s ease 4.6s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+        
+        .toast-notification.success { border-left-color: var(--success); }
+        .toast-notification.error { border-left-color: var(--danger); }
+        .toast-notification.info { border-left-color: var(--info); }
+        .toast-notification.warning { border-left-color: var(--warning); }
+        
+        .toast-title { font-weight: bold; margin-bottom: 5px; }
+        .toast-message { font-size: 13px; color: #666; }
+        .toast-close { float: right; cursor: pointer; color: #999; }
+        
+        .password-input-group { position: relative; display: flex; align-items: center; }
+        .password-input-group input { flex: 1; padding-right: 40px; }
+        .password-toggle { position: absolute; right: 12px; cursor: pointer; color: #999; background: none; border: none; font-size: 18px; transition: color 0.3s; }
+        .password-toggle:hover { color: var(--primary); }
+        
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1001; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        
+        .modal-content { 
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 20px; 
+            padding: 25px; 
+            width: 450px; 
+            max-width: 90%; 
+            animation: fadeInUp 0.3s ease; 
+        }
+        
+        .payment-option { 
+            display: flex; 
+            align-items: center; 
+            padding: 12px; 
+            border: 1px solid #e0e0e0; 
+            border-radius: 8px; 
+            margin-bottom: 10px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .payment-option:hover { background: rgba(102,126,234,0.1); border-color: var(--primary); transform: translateX(5px); }
+        .payment-option.selected { background: rgba(102,126,234,0.2); border-color: var(--primary); }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; 
+            padding: 10px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.9);
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .settings-tab { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+        .settings-tab button { 
+            background: none; 
+            border: none; 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .settings-tab button::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+        .settings-tab button:hover::after { width: 100%; }
+        .settings-tab button.active { color: var(--primary); }
+        .settings-tab button.active::after { width: 100%; }
+        
+        .settings-tab-content { display: none; }
+        .settings-tab-content.active { display: block; animation: fadeInUp 0.3s ease; }
+        
+        .profile-preview { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .profile-avatar { 
+            width: 80px; 
+            height: 80px; 
+            background: var(--gradient); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 32px; 
+            color: white; 
+            box-shadow: var(--shadow-lg);
+            transition: all 0.3s ease;
+        }
+        .profile-avatar:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
+        
+        .blocked-message { 
+            background: var(--danger); 
+            color: white; 
+            padding: 15px; 
+            border-radius: 10px; 
+            text-align: center; 
+            margin-bottom: 20px; 
+            animation: pulse 2s infinite;
+        }
+        
+        .notification-item { 
+            border: 1px solid #e0e0e0; 
+            padding: 12px; 
+            margin: 8px 0; 
+            border-radius: 8px; 
+            background: rgba(249,249,249,0.9);
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .notification-item:hover { 
+            transform: translateX(5px); 
+            box-shadow: var(--shadow-md);
+            background: rgba(255,255,255,0.98);
+        }
+        .notification-item.unread { 
+            background: rgba(227,242,253,0.9); 
+            border-left: 4px solid var(--info); 
+            animation: pulse 2s infinite;
+        }
+        
+        /* Chatbot Floating Animation */
+        .chatbot-toggle {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @media (max-width: 768px) { 
+            .stats { grid-template-columns: repeat(2, 1fr); } 
+            .nav-links { justify-content: center; }
+            .search-box input { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h2>Library MS - User Portal</h2>
+        <div class="nav-links">
+            <a href="#" onclick="showSection('books')" class="active"> 📚 Browse Books</a>
+            <a href="#" onclick="showSection('mybooks')">📕 My Books</a>
+            <a href="#" onclick="showSection('notifications')">🔔 Notifications</a>
+            <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
+            <button onclick="window.chatbot?.toggle()">💬</button>
+            <a href="#" onclick="logout()">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="blockedAlert" class="blocked-message" style="display:none;">
+            ⚠️ Your account is blocked due to overdue books. Please contact admin.
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><div>Total Books</div><div class="stat-number" id="totalBooks">0</div></div>
+            <div class="stat-card"><div>My Books</div><div class="stat-number" id="myBooksCount">0</div></div>
+            <div class="stat-card"><div>Max Limit</div><div class="stat-number" id="maxBooks">3</div></div>
+            <div class="stat-card" onclick="showFineModal()"><div>My Fine</div><div class="stat-number" id="myFine">₹0</div></div>
+        </div>
+
+        <!-- Browse Books Section -->
+        <div id="booksSection" class="card section active">
+            <h3>Browse Available Books</h3>
+            <div class="search-box"><input type="text" id="searchBooks" placeholder="Search by title, author, or category..."></div>
+            <div style="overflow-x: auto;">
+                <table id="booksTable">
+                    <thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Available</th><th>Action</th></tr></thead>
+                    <tbody><tr><td colspan="5">Loading...<\/td><\/tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <!-- My Books Section -->
+        <div id="mybooksSection" class="card section">
+            <h3>My Issued Books</h3>
+            <div style="overflow-x: auto;">
+                <table id="myBooksTable" style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Book Title</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Author</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Issue Date</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Due Date</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Days Left</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Fine</th>
+                            <th style="padding: 12px; text-align: left; background: #667eea; color: white;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="7" style="text-align:center">Loading...<\/td><\/tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Notifications Section -->
+        <div id="notificationsSection" class="card section">
+            <h3>Notifications</h3>
+            <button class="btn btn-info btn-sm" onclick="loadNotifications()" style="margin-bottom:15px;">Refresh</button>
+            <div id="notificationsList"></div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settingsSection" class="card section">
+            <h3>Account Settings</h3>
+            <div class="profile-preview"><div class="profile-avatar" id="profileAvatar">👤</div><div><strong id="profileName"></strong><br><span id="profileEmail" style="color:#666"></span></div></div>
+            <div class="settings-tab">
+                <button class="active" onclick="showSettingsTab('profile')">Profile Settings</button>
+                <button onclick="showSettingsTab('password')">Change Password</button>
+                <button onclick="showSettingsTab('preferences')">Preferences</button>
+            </div>
+            <div id="profileTab" class="settings-tab-content active">
+                <form id="profileForm"><div class="form-group"><label>Full Name</label><input type="text" id="profileFullName" required></div><div class="form-group"><label>Email</label><input type="email" id="profileEmailInput" readonly style="background:#f5f5f5"></div><div class="form-group"><label>Phone Number</label><input type="tel" id="profilePhone" required></div><div class="form-group"><label>Address</label><textarea id="profileAddress" rows="3"></textarea></div><button type="submit" class="btn btn-success">Update Profile</button></form>
+            </div>
+            <div id="passwordTab" class="settings-tab-content">
+                <form id="passwordForm"><div class="form-group"><label>Current Password</label><div class="password-input-group"><input type="password" id="currentPassword" required><button type="button" class="password-toggle" onclick="togglePassword('currentPassword')">👁️</button></div></div><div class="form-group"><label>New Password</label><div class="password-input-group"><input type="password" id="newPassword" required><button type="button" class="password-toggle" onclick="togglePassword('newPassword')">👁️</button></div></div><div class="form-group"><label>Confirm New Password</label><div class="password-input-group"><input type="password" id="confirmPassword" required><button type="button" class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</button></div></div><button type="submit" class="btn btn-success">Change Password</button></form>
+            </div>
+            <div id="preferencesTab" class="settings-tab-content">
+                <form id="preferencesForm"><div class="form-group"><label>Email Notifications</label><select id="emailNotif"><option value="yes">Yes</option><option value="no">No</option></select></div><div class="form-group"><label>Due Date Reminder</label><select id="reminderDays"><option value="1">1 day before</option><option value="2">2 days before</option><option value="3">3 days before</option><option value="7">1 week before</option></select></div><button type="submit" class="btn btn-success">Save Preferences</button></form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h3>💰 Pay Fine</h3>
+            <p>Total Fine Amount: <strong id="fineAmount">₹0</strong></p>
+            <div id="paymentOptions">
+                <div class="payment-option" onclick="selectPayment('UPI')"><label><input type="radio" name="paymentMethod" value="UPI"> UPI (Google Pay, PhonePe, Paytm)</label></div>
+                <div class="payment-option" onclick="selectPayment('Debit Card')"><label><input type="radio" name="paymentMethod" value="Debit Card"> Debit Card</label></div>
+                <div class="payment-option" onclick="selectPayment('Credit Card')"><label><input type="radio" name="paymentMethod" value="Credit Card"> Credit Card</label></div>
+            </div>
+            <div id="paymentDetails" style="display:none; margin-top:15px;">
+                <div class="form-group"><label id="paymentDetailLabel">UPI ID</label><input type="text" id="paymentDetailInput" placeholder="Enter your UPI ID or Card Number" required></div>
+            </div>
+            <button class="btn btn-success" onclick="payFineWithPayment()" style="margin-top:15px;">✅ Pay Fine</button>
+            <button class="btn btn-danger" onclick="closePaymentModal()" style="margin-top:10px;">Cancel</button>
+        </div>
+    </div>
+
+    <div id="message"></div>
+
+    <script src="chatbot.js"></script>
+    <script>
+        const API = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || '{}');
+        let allBooks = [];
+        let selectedPaymentMethod = null;
+        let currentFineAmount = 0;
+
+        if (!token) window.location.href = 'index.html';
+        if (user.role === 'admin') window.location.href = 'admin-dashboard.html';
+
+        function showToast(title, message, type) {
+            let toast = document.createElement('div');
+            toast.className = 'toast-notification ' + type;
+            toast.innerHTML = '<span class="toast-close" onclick="this.parentElement.remove()">&times;</span><div class="toast-title">' + title + '</div><div class="toast-message">' + message + '</div>';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        function togglePassword(inputId) {
+            let input = document.getElementById(inputId);
+            let toggle = input.nextElementSibling;
+            if (input.type === 'password') { input.type = 'text'; toggle.innerHTML = '🙈'; }
+            else { input.type = 'password'; toggle.innerHTML = '👁️'; }
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.getElementById(section + 'Section').classList.add('active');
+            if (section === 'books') loadBooks();
+            if (section === 'mybooks') loadMyBooks();
+            if (section === 'notifications') loadNotifications();
+            if (section === 'settings') loadUserProfile();
+        }
+
+        function showSettingsTab(tab) {
+            document.querySelectorAll('.settings-tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+            document.querySelectorAll('.settings-tab button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        async function fetchAPI(url, options) {
+            let res = await fetch(url, {
+                ...(options || {}),
+                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+            });
+            if (res.status === 401) logout();
+            return res.json();
+        }
+
+        // ============ LOAD BOOKS ============
+        async function loadBooks() {
+            try {
+                let books = await fetchAPI(API + '/books');
+                allBooks = books;
+                document.getElementById('totalBooks').innerText = books.length;
+                
+                let borrowStatus = await fetchAPI(API + '/transactions/borrow-status');
+                let myBooks = await fetchAPI(API + '/transactions/my-books');
+                let currentBorrowed = myBooks.length;
+                let maxAllowed = user.maxBooksAllowed || 3;
+                
+                if (borrowStatus.isBlocked) document.getElementById('blockedAlert').style.display = 'block';
+                
+                let tbody = document.querySelector('#booksTable tbody');
+                if (!books.length) { tbody.innerHTML = '<tr><td colspan="5">No books available<\/td><\/tr>'; return; }
+                
+                let html = '';
+                for (let b of books) {
+                    let isAvailable = b.availableCopies > 0;
+                    let canBorrow = borrowStatus.canBorrow && isAvailable && currentBorrowed < maxAllowed;
+                    html += '<tr>';
+                    html += '<td><strong>' + b.title + '</strong></td>';
+                    html += '<td>' + b.author + '</td>';
+                    html += '<td>' + b.category + '</td>';
+                    html += '<td>' + b.availableCopies + '</td>';
+                    html += '<td>';
+                    if (canBorrow) html += '<button class="btn btn-success btn-sm" onclick="borrowBook(\'' + b._id + '\', \'' + b.title + '\')">Borrow</button>';
+                    else if (!isAvailable) html += '<button class="btn btn-warning btn-sm" onclick="requestBook(\'' + b._id + '\', \'' + b.title + '\')">Request</button>';
+                    else html += '<span style="color:orange;">Limit reached</span>';
+                    html += '</td></tr>';
+                }
+                tbody.innerHTML = html;
+            } catch (error) { console.error(error); }
+        }
+
+        async function borrowBook(bookId, bookTitle) {
+            if (!confirm('Borrow "' + bookTitle + '"?')) return;
+            try {
+                let response = await fetch(API + '/transactions/user-borrow', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookId })
+                });
+                let result = await response.json();
+                if (response.ok) {
+                    showToast('Book Borrowed', bookTitle + ' borrowed successfully!', 'success');
+                    loadBooks(); loadMyBooks(); loadDashboardStats();
+                } else {
+                    showToast('Error', result.message, 'error');
+                }
+            } catch (error) { showToast('Error', error.message, 'error'); }
+        }
+
+        async function requestBook(bookId, bookTitle) {
+            if (!confirm('Request more copies of "' + bookTitle + '"?')) return;
+            try {
+                let response = await fetch(API + '/transactions/request-book', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookId, bookTitle })
+                });
+                let result = await response.json();
+                if (response.ok) showToast('Request Sent', result.message, 'info');
+                else showToast('Error', result.message, 'error');
+            } catch (error) { showToast('Error', error.message, 'error'); }
+        }
+
+        async function returnBook(transactionId, bookTitle) {
+            if (!confirm('Return "' + bookTitle + '"?')) return;
+            try {
+                let response = await fetch(API + '/transactions/user-return/' + transactionId, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+                });
+                let result = await response.json();
+                if (response.ok) {
+                    showToast('Book Returned', result.message, 'success');
+                    loadBooks(); loadMyBooks(); loadDashboardStats();
+                } else {
+                    showToast('Error', result.message, 'error');
+                }
+            } catch (error) { showToast('Error', error.message, 'error'); }
+        }
+
+        // ============ MY BOOKS ============
+        async function loadMyBooks() {
+            try {
+                let books = await fetchAPI(API + '/transactions/my-books');
+                document.getElementById('myBooksCount').innerText = books.length;
+                
+                let tbody = document.querySelector('#myBooksTable tbody');
+                if (!books.length) { tbody.innerHTML = '<tr><td colspan="7">No books issued<\/td><\/tr>'; return; }
+                
+                let purchases = [];
+                try { purchases = await fetchAPI(API + '/purchase/my-purchases'); } catch(e) {}
+                let purchasedIds = purchases.map(p => p.bookId?._id || p.bookId);
+                
+                let html = '';
+                for (let b of books) {
+                    let due = new Date(b.dueDate);
+                    let today = new Date();
+                    let daysLeft = Math.ceil((due - today) / (1000*60*60*24));
+                    let fine = daysLeft < 0 ? Math.abs(daysLeft) * 5 : 0;
+                    let alreadyPurchased = purchasedIds.includes(b.bookId?._id);
+                    
+                    html += '</tr>';
+                    html += '<td><strong>' + (b.bookId?.title || 'N/A') + '</strong></td>';
+                    html += '<td>' + (b.bookId?.author || 'N/A') + '</td>';
+                    html += '<td>' + new Date(b.issueDate).toLocaleDateString() + '</td>';
+                    html += '<td>' + new Date(b.dueDate).toLocaleDateString() + '</td>';
+                    html += '<td style="color:' + (daysLeft<0?'red':daysLeft<3?'orange':'green') + '">' + (daysLeft<0?'Overdue by '+(-daysLeft)+' days':daysLeft+' days left') + '</td>';
+                    html += '<td style="color:red">₹' + fine + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn btn-info btn-sm" onclick="previewBook(\'' + (b.bookId?._id) + '\')">Preview</button> ';
+                    if (!alreadyPurchased) {
+                        html += '<button class="btn btn-success btn-sm" onclick="buyBook(\'' + (b.bookId?._id) + '\', \'' + (b.bookId?.title) + '\')">Buy (₹5)</button> ';
+                    } else {
+                        html += '<button class="btn btn-success btn-sm" onclick="downloadBook(\'' + (b.bookId?._id) + '\', \'' + (b.bookId?.title) + '\')">Download</button> ';
+                    }
+                    html += '<button class="btn btn-danger btn-sm" onclick="returnBook(\'' + b._id + '\', \'' + (b.bookId?.title) + '\')">Return</button>';
+                    html += '</td></tr>';
+                }
+                tbody.innerHTML = html;
+            } catch (error) { console.error(error); }
+        }
+
+        // ============ PREVIEW, BUY, DOWNLOAD ============
+        async function previewBook(bookId) {
+            const token = localStorage.getItem('token');
+            if (!token) { showToast('Error', 'Please login again', 'error'); return; }
+            window.open(`${API}/books/preview/${bookId}?token=${token}`, '_blank');
+        }
+
+        async function buyBook(bookId, bookTitle) {
+            let method = prompt(`📚 Buy "${bookTitle}" for ₹5\n\nSelect Payment Method:\n1 - UPI\n2 - Debit Card\n3 - Credit Card\n\nEnter 1, 2, or 3:`);
+            
+            let paymentMethod = '';
+            if (method === '1') paymentMethod = 'UPI';
+            else if (method === '2') paymentMethod = 'Debit Card';
+            else if (method === '3') paymentMethod = 'Credit Card';
+            else { showToast('Payment Cancelled', '', 'info'); return; }
+            
+            let paymentId = prompt(`Enter your ${paymentMethod} details (any value works for demo):`);
+            if (!paymentId) { showToast('Payment Cancelled', '', 'info'); return; }
+            
+            try {
+                const response = await fetch(`${API}/purchase/buy/${bookId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentMethod: paymentMethod, paymentId: paymentId })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('✅ Purchase Successful!', result.message, 'success');
+                    if (confirm('Download now?')) {
+                        window.open(`${API}/books/download/${bookId}?token=${token}`, '_blank');
+                    }
+                    loadMyBooks();
+                } else {
+                    showToast('❌ Purchase Failed', result.message, 'error');
+                }
+            } catch (error) { showToast('❌ Error', error.message, 'error'); }
+        }
+
+        async function downloadBook(bookId, bookTitle) {
+            const token = localStorage.getItem('token');
+            if (!token) { showToast('Error', 'Please login again', 'error'); return; }
+            if (confirm(`Download "${bookTitle}"?`)) {
+                window.open(`${API}/books/download/${bookId}?token=${token}`, '_blank');
+            }
+        }
+
+        // ============ PAY FINE ============
+        async function payFineWithPayment() {
+            if (currentFineAmount <= 0) {
+                showToast('No Fine', 'You have no pending fines to pay!', 'info');
+                return;
+            }
+            
+            let method = prompt(`💰 Pay Fine: ₹${currentFineAmount}\n\nSelect Payment Method:\n1 - UPI\n2 - Debit Card\n3 - Credit Card\n\nEnter 1, 2, or 3:`);
+            
+            let paymentMethod = '';
+            if (method === '1') paymentMethod = 'UPI';
+            else if (method === '2') paymentMethod = 'Debit Card';
+            else if (method === '3') paymentMethod = 'Credit Card';
+            else { showToast('Payment Cancelled', '', 'info'); return; }
+            
+            let paymentId = prompt(`Enter your ${paymentMethod} details (any value works for demo):`);
+            if (!paymentId) { showToast('Payment Cancelled', '', 'info'); return; }
+            
+            try {
+                const response = await fetch(`${API}/payment/pay-fine`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentMethod: paymentMethod, paymentId: paymentId, amount: currentFineAmount })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('✅ Fine Paid Successfully!', result.message, 'success');
+                    closePaymentModal();
+                    loadDashboardStats();
+                    loadMyBooks();
+                    loadNotifications();
+                } else {
+                    showToast('❌ Payment Failed', result.message, 'error');
+                }
+            } catch (error) { showToast('❌ Error', error.message, 'error'); }
+        }
+
+        // ============ NOTIFICATIONS ============
+        async function loadNotifications() {
+            try {
+                let notifications = await fetchAPI(API + '/transactions/notifications');
+                let container = document.getElementById('notificationsList');
+                if (!notifications.length) { container.innerHTML = '<p>No notifications</p>'; return; }
+                let html = '';
+                for (let n of notifications) {
+                    html += '<div class="notification-item ' + (n.read ? '' : 'unread') + '" onclick="markRead(\'' + n._id + '\')">';
+                    html += '<strong>' + n.title + '</strong><br>' + n.message + '<br><small>' + new Date(n.createdAt).toLocaleString() + '</small></div>';
+                }
+                container.innerHTML = html;
+            } catch (error) { console.error(error); }
+        }
+
+        async function markRead(id) {
+            await fetch(API + '/transactions/notifications/read/' + id, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token } });
+            loadNotifications();
+        }
+
+        // ============ PROFILE ============
+        async function loadUserProfile() {
+            try {
+                let userData = await fetchAPI(API + '/auth/me');
+                if (userData.id) {
+                    document.getElementById('profileFullName').value = userData.name;
+                    document.getElementById('profileEmailInput').value = userData.email;
+                    document.getElementById('profilePhone').value = userData.phone || '';
+                    document.getElementById('profileAddress').value = userData.address || '';
+                    document.getElementById('profileAvatar').innerHTML = userData.name.charAt(0).toUpperCase();
+                    document.getElementById('profileName').innerText = userData.name;
+                }
+            } catch (error) { console.error(error); }
+        }
+
+        async function loadDashboardStats() {
+            try {
+                let userData = await fetchAPI(API + '/auth/me');
+                document.getElementById('maxBooks').innerText = userData.maxBooksAllowed || 3;
+                let fineData = await fetchAPI(API + '/payment/my-fine');
+                currentFineAmount = fineData.totalFine || 0;
+                document.getElementById('myFine').innerText = '₹' + currentFineAmount;
+            } catch (error) { console.error(error); }
+        }
+
+        // ============ PAYMENT MODAL ============
+        function showFineModal() {
+            if (currentFineAmount <= 0) { showToast('No Fine', 'You have no pending fines to pay!', 'info'); return; }
+            selectedPaymentMethod = null;
+            document.getElementById('paymentDetails').style.display = 'none';
+            document.getElementById('paymentDetailInput').value = '';
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+            document.getElementById('fineAmount').innerHTML = '₹' + currentFineAmount;
+            document.getElementById('paymentModal').style.display = 'flex';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('paymentDetails').style.display = 'none';
+            selectedPaymentMethod = null;
+            document.getElementById('paymentDetailInput').value = '';
+        }
+
+        function selectPayment(method) {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            const detailsDiv = document.getElementById('paymentDetails');
+            const labelSpan = document.getElementById('paymentDetailLabel');
+            detailsDiv.style.display = 'block';
+            if (method === 'UPI') {
+                labelSpan.innerText = 'UPI ID';
+                document.getElementById('paymentDetailInput').placeholder = 'Enter your UPI ID';
+            } else {
+                labelSpan.innerText = 'Card Number';
+                document.getElementById('paymentDetailInput').placeholder = 'Enter your card number';
+            }
+        }
+
+        // ============ FORM SUBMITS ============
+        document.getElementById('profileForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let data = { name: document.getElementById('profileFullName').value, phone: document.getElementById('profilePhone').value, address: document.getElementById('profileAddress').value };
+            let res = await fetch(API + '/auth/update-profile', { method: 'PUT', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            let result = await res.json();
+            if (res.ok) { showToast('Profile updated!', '', 'success'); user.name = data.name; localStorage.setItem('user', JSON.stringify(user)); document.getElementById('profileName').innerText = data.name; }
+            else showToast('Error', result.message, 'error');
+        });
+
+        document.getElementById('passwordForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (document.getElementById('newPassword').value !== document.getElementById('confirmPassword').value) { showToast('Error', 'Passwords do not match', 'error'); return; }
+            let data = { currentPassword: document.getElementById('currentPassword').value, newPassword: document.getElementById('newPassword').value };
+            let res = await fetch(API + '/auth/change-password', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            let result = await res.json();
+            if (res.ok) { showToast('Password changed!', '', 'success'); document.getElementById('passwordForm').reset(); }
+            else showToast('Error', result.message, 'error');
+        });
+
+        document.getElementById('preferencesForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            let data = { emailNotifications: document.getElementById('emailNotif').value, reminderDays: document.getElementById('reminderDays').value };
+            localStorage.setItem('preferences', JSON.stringify(data));
+            showToast('Preferences saved!', '', 'success');
+        });
+
+        document.getElementById('searchBooks')?.addEventListener('input', function(e) {
+            let term = e.target.value.toLowerCase();
+            let filtered = allBooks.filter(b => b.title?.toLowerCase().includes(term) || b.author?.toLowerCase().includes(term) || b.category?.toLowerCase().includes(term));
+            let tbody = document.querySelector('#booksTable tbody');
+            let html = '';
+            for (let b of filtered) {
+                html += '<tr>';
+                html += '<td><strong>' + b.title + '</strong></td>';
+                html += '<td>' + b.author + '</td>';
+                html += '<td>' + b.category + '</td>';
+                html += '<td>' + b.availableCopies + '</td>';
+                html += '<td>';
+                if (b.availableCopies > 0) html += '<button class="btn btn-success btn-sm" onclick="borrowBook(\'' + b._id + '\', \'' + b.title + '\')">Borrow</button>';
+                else html += '<button class="btn btn-warning btn-sm" onclick="requestBook(\'' + b._id + '\', \'' + b.title + '\')">Request</button>';
+                html += '<\/td><\/tr>';
+            }
+            tbody.innerHTML = html;
+        });
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        loadBooks();
+        loadMyBooks();
+        loadDashboardStats();
+        setInterval(() => { loadMyBooks(); loadNotifications(); loadDashboardStats(); }, 30000);
+    </script>
+</body>
+</html>

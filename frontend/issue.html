@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Book - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="books.html">Books</a>
+                <a href="members.html">Members</a>
+                <a href="issue.html" class="active">Issue Book</a>
+                <a href="return.html">Return Book</a>
+                <a href="reports.html">Reports</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📤 Issue Book to Member</div>
+            <div id="message"></div>
+            <form id="issueForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Select Member *</label>
+                        <select id="memberId" required>
+                            <option value="">Loading members...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Book *</label>
+                        <select id="bookId" required>
+                            <option value="">Loading books...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Due Days (Return within)</label>
+                    <input type="number" id="dueDays" value="14" min="1" max="30">
+                    <small>Fine: ₹5 per day after due date</small>
+                </div>
+                <button type="submit" class="btn btn-success">📤 Issue Book</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">📋 Current Issued Books</div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Member Name</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Loading...<\/td><\/tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        function checkAuth() {
+            if (!localStorage.getItem('isLoggedIn')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            const bgColor = type === 'error' ? '#f8d7da' : '#d4edda';
+            const textColor = type === 'error' ? '#721c24' : '#155724';
+            messageDiv.innerHTML = `<div style="background: ${bgColor}; color: ${textColor}; padding: 10px; border-radius: 5px; margin-bottom: 15px;">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+        
+        // Load available books
+        async function loadAvailableBooks() {
+            try {
+                const response = await fetch(`${API_URL}/books`);
+                const books = await response.json();
+                const select = document.getElementById('bookId');
+                
+                const availableBooks = books.filter(b => b.availableCopies > 0);
+                if (availableBooks.length === 0) {
+                    select.innerHTML = '<option value="">No books available</option>';
+                } else {
+                    select.innerHTML = '<option value="">Select a book</option>' + 
+                        availableBooks.map(book => 
+                            `<option value="${book._id}">${book.title} by ${book.author} (${book.availableCopies} available)</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('Error loading books:', error);
+            }
+        }
+        
+        // Load members
+        async function loadMembers() {
+            try {
+                const response = await fetch(`${API_URL}/members`);
+                const members = await response.json();
+                const select = document.getElementById('memberId');
+                
+                if (members.length === 0) {
+                    select.innerHTML = '<option value="">No members found</option>';
+                } else {
+                    select.innerHTML = '<option value="">Select a member</option>' + 
+                        members.map(member => 
+                            `<option value="${member._id}">${member.name} - ${member.email} (${member.booksIssued}/${member.maxBooksAllowed} books)</option>`
+                        ).join('');
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+        }
+        
+        // Issue book
+        document.getElementById('issueForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const issueData = {
+                bookId: document.getElementById('bookId').value,
+                memberId: document.getElementById('memberId').value,
+                dueDays: parseInt(document.getElementById('dueDays').value) || 14
+            };
+            
+            if (!issueData.bookId || !issueData.memberId) {
+                showMessage('Please select both book and member', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/transactions/issue`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(issueData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`✅ Book issued successfully! Due date: ${new Date(result.dueDate).toLocaleDateString()}`, 'success');
+                    document.getElementById('issueForm').reset();
+                    loadAvailableBooks();
+                    loadTransactions();
+                } else {
+                    showMessage(`❌ Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Load transactions
+        async function loadTransactions() {
+            try {
+                const response = await fetch(`${API_URL}/transactions`);
+                const transactions = await response.json();
+                const tbody = document.getElementById('transactionsTableBody');
+                
+                if (transactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No transactions found</td><\/tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = transactions.map(trans => `
+                    <tr>
+                        <td>${trans.bookId?.title || 'N/A'}</td>
+                        <td>${trans.memberId?.name || 'N/A'}</td>
+                        <td>${new Date(trans.issueDate).toLocaleDateString()}</td>
+                        <td>${new Date(trans.dueDate).toLocaleDateString()}</td>
+                        <td><span style="background: ${trans.status === 'ISSUED' ? '#ffc107' : '#28a745'}; padding: 5px 10px; border-radius: 5px;">${trans.status}</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        // Initialize page
+        loadAvailableBooks();
+        loadMembers();
+        loadTransactions();
+    </script>
+</body>
+</html>

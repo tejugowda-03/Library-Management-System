@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Members - Library Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <div class="logo">
+                <h2>📚 Library MS</h2>
+            </div>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="books.html">Books</a>
+                <a href="members.html" class="active">Members</a>
+                <a href="issue.html">Issue Book</a>
+                <a href="return.html">Return Book</a>
+                <a href="reports.html">Reports</a>
+                <a href="#" onclick="logout()" class="logout-btn">Logout</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">👤 Add New Member</div>
+            <div id="message"></div>
+            <form id="memberForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="name" required placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="email" required placeholder="Enter email">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone *</label>
+                        <input type="tel" id="phone" required placeholder="10-digit mobile number">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="address" rows="2" placeholder="Enter address"></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Add Member</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">👥 Member List</div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search members by name, email or phone...">
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Books Issued</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="membersTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        // Check authentication
+        function checkAuth() {
+            if (!localStorage.getItem('isLoggedIn')) {
+                window.location.href = 'index.html';
+            }
+        }
+        checkAuth();
+        
+        // Show message
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            const bgColor = type === 'error' ? '#f8d7da' : '#d4edda';
+            const textColor = type === 'error' ? '#721c24' : '#155724';
+            messageDiv.innerHTML = `<div style="background: ${bgColor}; color: ${textColor}; padding: 10px; border-radius: 5px; margin-bottom: 15px;">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 3000);
+        }
+        
+        // Add Member
+        document.getElementById('memberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const memberData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/members`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`✅ Member "${result.name}" added successfully!`, 'success');
+                    document.getElementById('memberForm').reset();
+                    loadMembers();
+                } else {
+                    showMessage(`❌ Error: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+        
+        // Load Members
+        async function loadMembers() {
+            try {
+                const response = await fetch(`${API_URL}/members`);
+                const members = await response.json();
+                const tbody = document.getElementById('membersTableBody');
+                
+                if (!members.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No members found</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = members.map(member => `
+                    <tr>
+                        <td>${member.name}</td>
+                        <td>${member.email}</td>
+                        <td>${member.phone}</td>
+                        <td>${member.address || '-'}</td>
+                        <td>${member.booksIssued || 0}/${member.maxBooksAllowed || 3}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteMember('${member._id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading members:', error);
+                document.getElementById('membersTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center;">Error loading members</td></tr>';
+            }
+        }
+        
+        // Delete Member
+        async function deleteMember(id) {
+            if (confirm('Are you sure you want to delete this member?')) {
+                try {
+                    const response = await fetch(`${API_URL}/members/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        showMessage('Member deleted successfully!', 'success');
+                        loadMembers();
+                    } else {
+                        const result = await response.json();
+                        showMessage(result.message, 'error');
+                    }
+                } catch (error) {
+                    showMessage('Error deleting member: ' + error.message, 'error');
+                }
+            }
+        }
+        
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#membersTableBody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        // Load members on page load
+        loadMembers();
+    </script>
+</body>
+</html>
