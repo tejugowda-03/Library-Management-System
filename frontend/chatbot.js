@@ -90,7 +90,7 @@ class Chatbot {
         this.showTyping();
         
         try {
-            const response = await fetch('http://localhost:5000/api/chatbot/ask', {
+            const response = await fetch('https://library-management-system-1npg.onrender.com/api/chatbot/ask', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ class Chatbot {
 
     async loadSuggestions() {
         try {
-            const response = await fetch('http://localhost:5000/api/chatbot/suggestions', {
+            const response = await fetch('https://library-management-system-1npg.onrender.com/api/chatbot/suggestions', {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
