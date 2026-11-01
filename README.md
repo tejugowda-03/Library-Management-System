@@ -25,5 +25,5 @@ A full-stack web application built to automate library operations, manage book b
 5. Start the server: `npm run dev`
 
 ## 🌐 Live Demo
-* **Frontend:** https://library-management-system-gj7h.onrender.com (or your Netlify link)
-* **Backend API:** https://library-management-system-1npg.onrender.com
+* **Frontend:** https://frabjous-jelly-58d600.netlify.app/ (or your Netlify link)
+* **Backend API:** https://library-management-system-1npg.onrender.com/
