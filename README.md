@@ -2,6 +2,9 @@
 
 A full-stack web application built to automate library operations, manage book borrowing, calculate fines, and provide AI-based book recommendations.
 
+## 🎯 Project Objective
+To transform the traditional library experience into a smart, digital ecosystem by eliminating manual paperwork and automating core operations. This system aims to make book borrowing seamless, ensure zero revenue loss through automated fine calculations, and secure user data with robust JWT authentication. Beyond just management, the goal is to make reading exciting by using an AI engine to recommend personalized books, while keeping users effortlessly informed through automated email alerts.
+
 ## 🚀 Technologies Used
 * **Frontend:** HTML5, CSS3, JavaScript, Bootstrap, Chart.js
 * **Backend:** Node.js, Express.js
@@ -27,3 +30,9 @@ A full-stack web application built to automate library operations, manage book b
 ## 🌐 Live Demo
 * **Frontend:** https://frabjous-jelly-58d600.netlify.app/ (or your Netlify link)
 * **Backend API:** https://library-management-system-1npg.onrender.com/
+
+## 🔐 Demo Admin Credentials
+
+* **Email: admin@library.com
+* **Password: admin123
+
